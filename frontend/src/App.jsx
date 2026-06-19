@@ -1,24 +1,45 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import ResultCard from "./ResultCard";
+import "./App.css";
 
 function App() {
   const [topic, setTopic] = useState("");
   const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    console.log("Topic Changed:",topic);
+  }, [topic]);
 
   const generate = async () => {
+    if (topic === "") {
+      alert("Please enter a topic");
+      return;
+    }
+
+    setLoading(true);
+
     const response = await fetch("http://127.0.0.1:5000/generate", {
       method: "POST",
-      headers: {"Content-Type": "application/json",},
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
-      topic: topic,}),
+        topic: topic,
+      }),
     });
 
     const data = await response.json();
 
+    console.log(data);
+
     setResult(data);
+
+    setLoading(false);
   };
 
   return (
-    <div>
+    <div className="container">
       <h1>Student Prep</h1>
 
       <input
@@ -28,36 +49,25 @@ function App() {
         placeholder="Enter Topic"
       />
 
-      <button onClick={generate}>
+      <button onClick={generate} diabled={loading}>
+        {loading ? "Generating..":"Generate"}
         Generate
       </button>
 
+      {loading && <p>Generating...</p>}
+
       {result && (
-        <div>
-          <h2>Summary</h2>
-          <p>{result.summary}</p>
+        <>
+          <ResultCard
+            title="Summary"
+            content={result.summary}
+          />
 
-          <h2>Quiz Questions</h2>
-          <ul>
-            {result.quiz_questions.map((question, index) => (
-              <li key={index}>{question}</li>
-            ))}
-          </ul>
-
-          <h2>Interview Questions</h2>
-          <ul>
-            {result.interview_questions.map((question, index) => (
-              <li key={index}>{question}</li>
-            ))}
-          </ul>
-
-          <h2>Key Concepts</h2>
-          <ul>
-            {result.key_concepts.map((concept, index) => (
-              <li key={index}>{concept}</li>
-            ))}
-          </ul>
-        </div>
+          <ResultCard
+            title="Key Concepts"
+            content={result.key_concepts.join(", ")}
+          />
+        </>
       )}
     </div>
   );
